@@ -1,0 +1,72 @@
+# "org" ensures this Service is used with the correct Serverless Framework Access Key.
+org: wagnerwutzke
+# "app" enables Serverless Framework Dashboard features and sharing them with other Services.
+app: dio-infra-as-code-aws
+# "service" is the name of this project. This will also be added to your AWS resource names.
+service: dio-infra-as-code-aws
+
+provider:
+  name: aws
+  runtime: nodejs24.x
+  architecture: arm64
+  region: us-east-2
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+            - dynamodb:Scan
+            - dynamodb:Query
+          Resource:
+            - arn:aws:dynamodb:us-east-2:397620884121:table/ItemTable
+            - arn:aws:dynamodb:us-east-2:397620884121:table/ItemTable/index/*
+
+functions:
+  hello:
+    handler: src/hello.handler
+    events:
+      - httpApi:
+          path: /
+          method: get
+  insert:
+    handler: src/insert.handler
+    events:
+      - httpApi:
+          path: /items
+          method: post
+  update:
+    handler: src/update.handler
+    events:
+      - httpApi:
+          path: /items/{id}
+          method: put
+  fetchAll:
+    handler: src/fetchAll.handler
+    events:
+      - httpApi:
+          path: /items
+          method: get
+  fetchById:
+    handler: src/fetchById.handler
+    events:
+      - httpApi:
+          path: /items/{id}
+          method: get
+
+resources:
+  Resources:
+    MyS3Bucket:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ItemTable
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
